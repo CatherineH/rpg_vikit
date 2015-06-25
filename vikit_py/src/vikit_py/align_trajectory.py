@@ -3,11 +3,11 @@
 import numpy as np
 import vikit_py.transformations as transformations
 
+
 def align_sim3(model, data):
   """Implementation of the paper: S. Umeyama, Least-Squares Estimation
   of Transformation Parameters Between Two Point Patterns,
   IEEE Trans. Pattern Anal. Mach. Intell., vol. 13, no. 4, 1991.
-
   Input:
   model -- first trajectory (3xn)
   data -- second trajectory (3xn)
@@ -21,33 +21,43 @@ def align_sim3(model, data):
   """
 
   # substract mean
-  mu_M = model.mean(0).reshape(model.shape[0],1)
-  mu_D = data.mean(0).reshape(data.shape[0],1)
+  mu_M = model.mean(1).reshape(model.shape[0],1)
+  mu_D = data.mean(1).reshape(data.shape[0],1)
+
   model_zerocentered = model - mu_M
   data_zerocentered = data - mu_D
-  n = np.shape(model)[0]
+  n = np.shape(model)[1]
 
   # correlation
-  C = 1.0/n*np.dot(model_zerocentered.transpose(), data_zerocentered)
-  sigma2 = 1.0/n*np.multiply(data_zerocentered,data_zerocentered).sum()
+  C = (1.0/n)*np.dot( data_zerocentered , model_zerocentered.transpose())
   U_svd,D_svd,V_svd = np.linalg.linalg.svd(C)
-  D_svd = np.diag(D_svd)
-  V_svd = np.transpose(V_svd)
-  S = np.eye(3)
 
-  if(np.linalg.det(U_svd)*np.linalg.det(V_svd) < 0):
-    S[2,2] = -1
+  sigma2 = (1.0/n)*(np.multiply(data_zerocentered,data_zerocentered).sum())
 
-  R = np.dot(U_svd, np.dot(S, np.transpose(V_svd)))
-  s = 1.0/sigma2*np.trace(np.dot(D_svd, S))
-  t = mu_M-s*np.dot(R,mu_D)
+  rank = np.linalg.linalg.matrix_rank(C)
+  determinant = np.linalg.linalg.det(C)
 
+  S = np.matrix(np.identity( 3 ))
+  if (np.linalg.linalg.matrix_rank(C) > 2):
+    if (determinant < 0.0):
+      S[2,2] = -1
+  elif (np.linalg.linalg.matrix_rank(C) == 2):
+    if(np.linalg.det(U_svd) * np.linalg.det(V_svd)<0.0):
+      S[2,2] = -1
+
+  R = U_svd * S * V_svd
+
+  s = np.trace(D_svd * S) / sigma2
+  t = mu_D - s * R * mu_M
   # TODO:
   # model_aligned = s * R * model + t
   # alignment_error = model_aligned - data
   # t_error = np.sqrt(np.sum(np.multiply(alignment_error,alignment_error),0)).A[0]
+  model_aligned = s * R * model + t
+  alignment_error = model_aligned - data
+  t_error = np.sqrt(np.sum(np.multiply(alignment_error,alignment_error),0)).A[0]
 
-  return s, R, t #, t_error
+  return s, R, t , t_error
 
 def align_se3(model,data, precision = False):
     """Align two trajectories using the method of Horn (closed-form).
