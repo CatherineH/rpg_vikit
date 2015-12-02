@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-from catkin_pkg.python_setup import generate_distutils_setup
 
-d = generate_distutils_setup(
-    packages=['vikit_py'],
-    package_dir={'': 'src'},
-    install_requires=['rospkg', 'yaml'],
-    )
-
-setup(**d)
+setup(
+      name='python-vikit',
+      version='0.0',
+      description='Python odometry alignment tools',
+      author='Catherine Holloway',
+      author_email='cholloway@clearpathrobotics.com',
+      url='https://github.com/CatherineH/rpg_vikit/tree/master/vikit_py',
+      packages=['vikit_py'],
+      package_dir={'': 'src'})
