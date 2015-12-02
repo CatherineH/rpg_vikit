@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(
-      name='python-vikit',
+      name='vikit',
       version='0.0',
       description='Python odometry alignment tools',
       author='Catherine Holloway',
